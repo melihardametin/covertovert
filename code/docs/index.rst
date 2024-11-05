@@ -6,7 +6,9 @@
 Basic ICMP Documentation
 ========================
 
-Please add your names and group ID here by editing `index.rst` in the docs folder.
+|Melih Arda Metin   2521771
+|Fehmi Tunahan Gümüş   2521607
+|Group 72
 
 
 .. toctree::
