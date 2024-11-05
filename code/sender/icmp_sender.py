@@ -1,3 +1,11 @@
-import scapy
+from scapy.all import IP, ICMP, send
 
-# Implement your ICMP sender here
+
+def sendicmp():
+    destip = '172.18.0.2'
+
+    packet =  IP(dst=destip, ttl=1) /  ICMP()
+    send(packet)
+
+if __name__ == "__main__":
+    sendicmp()
