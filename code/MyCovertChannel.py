@@ -81,7 +81,6 @@ class MyCovertChannel(CovertChannelBase):
             sniff_socket = sniff(
                 filter=f"tcp and src host 172.18.0.2 and dst port 8000",
                 prn=packet_handler,
-                timeout=40,
                 stop_filter=lambda _: sender_finished == True
             )
             print("sniff ended")
