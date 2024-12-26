@@ -20,6 +20,9 @@ class MyCovertChannel(CovertChannelBase):
 
             print(f"Sent burst of {num_packets} packets for bit '{bit}'")
             sleep(idle_time)
+        sleep(idle_time)
+        packet = IP(dst="172.18.0.3") / TCP(dport=8000, flags="S")
+        super().send(packet)
 
 
 
@@ -67,42 +70,35 @@ class MyCovertChannel(CovertChannelBase):
 
                     print(f"Decoded burst: {burst_packet_count} packets -> '{received_message[-1:]}'")
                     print("No packets received in the last 0.6 seconds. Terminating sniffing.")
-                    burst_packet_count = 0
                     sender_finished = True
-                    
-                    # Force close the sniffing socket
-                    packet = IP(dst="172.18.0.3") / TCP(dport=8000, flags="S")
-                    send(packet, iface="eth0", verbose=False)
+                    break
                     
 
         # Start sniffing with socket access
         def start_sniffing():
             nonlocal sniff_socket
+            print("sniff started")
             sniff_socket = sniff(
                 filter=f"tcp and src host 172.18.0.2 and dst port 8000",
                 prn=packet_handler,
                 timeout=40,
-                stop_filter=lambda _: sender_finished
+                stop_filter=lambda _: sender_finished == True
             )
+            print("sniff ended")
 
-        # Run sniff in a separate thread
         sniff_thread = threading.Thread(target=start_sniffing)
         sniff_thread.start()
 
-        # Run monitor thread
         monitor_thread = threading.Thread(target=monitor_terminated)
         monitor_thread.start()
 
-        # Wait for threads to complete
         monitor_thread.join()
         sniff_thread.join()
 
-        # Convert binary message to readable text
         decoded_message = "".join(
             self.convert_eight_bits_to_character(received_message[i:i + 8])
             for i in range(0, len(received_message), 8)
         )
 
-        # Log the received message
         self.log_message(decoded_message, log_file_name)
         print(f"Received message: {decoded_message}")
