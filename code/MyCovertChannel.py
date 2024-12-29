@@ -25,6 +25,8 @@ class MyCovertChannel(CovertChannelBase):
         chunks = [binary_message[i:i + 8] for i in range(0, len(binary_message), 8)]
         print(f"Binary message chunks (8 bits each): {chunks}")
 
+        start_time = time()
+
         # Process each chunk
         for chunk_index, chunk in enumerate(chunks):
             print(f"Processing chunk {chunk_index + 1}/{len(chunks)}: {chunk}")
@@ -67,6 +69,12 @@ class MyCovertChannel(CovertChannelBase):
                 # Sleep for a little time
                 print(f"Sent burst of {burst_count} packets for bit '{bit}' (Index: {idx}) in chunk {chunk_index + 1}")
                 sleep(idle_time)
+
+
+        end_time = time()
+        elapsed_time = end_time - start_time
+        covert_channel_capacity = 128 / elapsed_time
+        print(f"Covert Channel Capacity: {covert_channel_capacity:.2f} bits/second\n")
 
 
 

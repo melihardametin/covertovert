@@ -139,7 +139,7 @@ make compare
 - **Assumptions:**
   - The network delays are minimal and do not affect burst detection significantly.
   - The `config.json` file is correctly formatted and accessible.
-  - Covert Channel Capacity: 3.28 bits/second
+  - Covert Channel Capacity: 1.31 bits/second
 
 
 ## Authors
