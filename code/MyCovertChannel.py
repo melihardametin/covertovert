@@ -71,7 +71,7 @@ class MyCovertChannel(CovertChannelBase):
         print(f"Covert Channel Capacity: {covert_channel_capacity:.2f} bits/second\n")
 
 
-    def receive(self, idle_threshold, log_file_name, index_range, random_seed):
+    def receive(self, idle_threshold, log_file_name, index_range, random_seed, timeout):
         manager = multiprocessing.Manager()
         shared_data = manager.dict()
 
@@ -150,8 +150,8 @@ class MyCovertChannel(CovertChannelBase):
 
         while True:
                 # Sleep for some time and check wheter the sending process is ended
-                sleep(0.4)
-                if shared_data['sender_started'] and (time() - shared_data['last_packet_time']) > 0.4:
+                sleep(timeout)
+                if shared_data['sender_started'] and (time() - shared_data['last_packet_time']) > timeout:
                     index = None
                     bit = None
 
