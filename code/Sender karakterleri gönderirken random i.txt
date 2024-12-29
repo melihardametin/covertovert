@@ -1,0 +1,25 @@
+Sender karakterleri gönderirken random index gönderimi yapılacak
+Örnek flow:
+
+İlk burst sender ve receiver'ın ortak kullanacağı seed'i belirler. Bu seed ile index_ranges rastgele shufflelanır.
+Bu seed her bir paket alımından sonra arttırılır. Böylelikle her gönderimdeki indexin temsili ve hangi bite karşılık geldiği
+rastgele belirlenir.
+
+
+ilk başta index bilgisi gönderilecek. Indexler belli rangedeki burst sayıları ile gönderilecek.
+Charlar 8 bitlik olduğu için ve her bit için 2 farklı değer olduğundan 16 farklı rangeimiz olacak
+index_ranges = [(1,3),(4,6),(7,9),(10,12),(13,15),(16,18),(19,21),(22,24),(25,27),(28,30),(31,33),(34,36),(37,39),(40,42),(43,45),(46,48)]
+meaning = [(0th index is 0),(0th index is 1),(1th index is 0),(1th index is 1),.....]
+
+
+
+char_to_send = [("1",0),("0",1),("1",2),("0",3),("0",4),("1",5),("0",6),("1",7)]
+gönderilecek char indexi ile beraber tuple olarak bir listede tutulur.
+her bir gönderimde randint(0, len(message_to_send)) bir random int alınır o indexteki eleman poplanır.
+
+Örnek olarak randint 1 döndü:
+poplanan_eleman = ("0",1)
+message_to_send = [("1",0),("1",2),("0",3),("0",4),("1",5),("0",6),("1",7)]
+i = poplanan_eleman[2]*2 + 1 if poplanan_eleman[0] == "1" else 0
+burst_count = index_ranges[i]
+
