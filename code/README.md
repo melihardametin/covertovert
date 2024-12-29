@@ -69,7 +69,9 @@ The `config.json` file specifies the parameters for the sender and receiver:
     [25, 27], [28, 30], [31, 33], [34, 36],
     [37, 39], [40, 42], [43, 45], [46, 48]
   ],
-  "random_seed": 32
+  "random_seed": 32,
+  "destination_ip": "172.18.0.3",
+  "destination_port": "8000"
 }
 ```
 
@@ -85,7 +87,9 @@ The `config.json` file specifies the parameters for the sender and receiver:
     [37, 39], [40, 42], [43, 45], [46, 48]
   ],
   "random_seed": 32,
-  "timeout": 0.6
+  "timeout": 0.6,
+  "src_host": "172.18.0.2",
+  "dst_port": "8000"
 }
 ```
 

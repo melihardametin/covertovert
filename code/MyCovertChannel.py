@@ -14,7 +14,7 @@ class MyCovertChannel(CovertChannelBase):
         random.shuffle(range_list)
         return range_list
         
-    def send(self, log_file_name, idle_time, index_range, random_seed):
+    def send(self, log_file_name, idle_time, index_range, random_seed, destination_ip, destination_port):
         # Create random binary mesage
         binary_message = self.generate_random_binary_message_with_logging(log_file_name)
 
@@ -54,7 +54,7 @@ class MyCovertChannel(CovertChannelBase):
 
                 # Send bursts
                 for _ in range(burst_count):
-                    packet = IP(dst="172.18.0.3") / TCP(dport=8000, flags="S")
+                    packet = IP(dst=destination_ip) / TCP(dport=destination_port, flags="S")
                     super().send(packet)
 
                 # Increase the random_seed based on randomly choosen index (idx which is chosen on line 35-36 and extracted on line 42)
@@ -71,7 +71,7 @@ class MyCovertChannel(CovertChannelBase):
         print(f"Covert Channel Capacity: {covert_channel_capacity:.2f} bits/second\n")
 
 
-    def receive(self, idle_threshold, log_file_name, index_range, random_seed, timeout):
+    def receive(self, idle_threshold, log_file_name, index_range, random_seed, timeout, src_host, dst_port):
         manager = multiprocessing.Manager()
         shared_data = manager.dict()
 
@@ -140,7 +140,7 @@ class MyCovertChannel(CovertChannelBase):
         
         def start_sniffing():
             sniff_socket = sniff(
-                filter=f"tcp and src host 172.18.0.2 and dst port 8000",
+                filter=f"tcp and src host {src_host} and dst port {dst_port}",
                 prn=packet_handler
             )
 
