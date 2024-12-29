@@ -23,6 +23,10 @@ class MyCovertChannel(CovertChannelBase):
         # Split binary message into chunks of 8 bits (process string with chunks)
         chunks = [binary_message[i:i + 8] for i in range(0, len(binary_message), 8)]
         # Process each chunk
+
+        # Timer start
+        start_time = time()
+
         for chunk_index, chunk in enumerate(chunks):
             # Prepare a list with ("bit value either 0 or 1", index of the bit). Also enumerate them.
             char_to_send = [(bit, idx) for idx, bit in enumerate(chunk)]
@@ -60,6 +64,11 @@ class MyCovertChannel(CovertChannelBase):
                 # Sleep for a little time
                 sleep(idle_time)
 
+        # Timer end
+        end_time = time()
+        elapsed_time = end_time - start_time
+        covert_channel_capacity = 128 / elapsed_time
+        print(f"Covert Channel Capacity: {covert_channel_capacity:.2f} bits/second\n")
 
 
     def receive(self, idle_threshold, log_file_name, index_range, random_seed):
