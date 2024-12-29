@@ -38,21 +38,24 @@ The project contains the following key components:
 - Splits the binary message into chunks of 8 bits.
 - For each chunk in a chunks:
     - Shuffle the index_range list with the current seed
-    - For each bit in a chunk in random order:
-        - Finds the corresponding burst range from index_range.
-        - Determines the number of packets to send randomly on the interval founded on previous step.
-        - Sends the burst of packets to a specified destination.
-        - Increment seed with selected bit
+    - Randomly pick a bit from char bits
+    - Find the corresponding burst range from index_range by using selected bit's index value.
+    - Determine the number of packets to send randomly on the interval founded on previous step.
+    - Sends the burst of packets to a specified destination.
+    - Increment seed with selected bits index value
 
 ### **Receiver (`MyCovertChannel.receive`)**
 
-- Listens for incoming packets on a specified port.
-- Tracks idle time to detect the end of a burst.
-- Decodes bursts into bits based on packet count ranges based on index_range list.
-- Increment random seed with received bit's calculated index value
-- Return to listening again
-- Reconstructs the binary message and converts it into a readable string.
-- Logs the received message.
+- Creates process that listens for incoming packets on a specified port.
+- On main process, sleep on a while loop for timeout seconds, when there is no packet received, terminate the sniffing process.
+- On sniff process:
+    - When package received, track idle time to detect the end of a burst.
+    - When end of a burst received, shuffles the range list as done in the sender.
+    - Gets the corresponding index and bit value from range list, and set the corresponding bit.
+    - Increments the seed with same value as sender (index value of the sended/received bit)
+    - Return to listening again
+    - Reconstructs the binary message and converts it into a readable string.
+    - Logs the received message.
 
 ## Configuration
 
@@ -71,7 +74,7 @@ The `config.json` file specifies the parameters for the sender and receiver:
   ],
   "random_seed": 32,
   "destination_ip": "172.18.0.3",
-  "destination_port": "8000"
+  "destination_port": 8000
 }
 ```
 
@@ -89,7 +92,7 @@ The `config.json` file specifies the parameters for the sender and receiver:
   "random_seed": 32,
   "timeout": 0.6,
   "src_host": "172.18.0.2",
-  "dst_port": "8000"
+  "dst_port": 8000
 }
 ```
 
@@ -142,4 +145,3 @@ make compare
 ## Authors
 - Melih Arda Metin
 - Fehmi Tunahan Gümüş
-

@@ -10,8 +10,8 @@
       [37, 39], [40, 42], [43, 45], [46, 48]
     ],
       "random_seed": 32,
-      "destination_ip": "172.18.0.3",
-      "destination_port": 8000
+      "ip": "172.18.0.3",
+      "port": 8000
     }
   },
   "receive": {
@@ -25,8 +25,8 @@
     ],
       "random_seed": 32,
       "timeout": 0.6,
-      "src_host": "172.18.0.2",
-      "dst_port": 8000
+      "ip": "172.18.0.2",
+      "port": "8000"
     }
   }
 }

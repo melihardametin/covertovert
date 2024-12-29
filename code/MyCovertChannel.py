@@ -14,20 +14,21 @@ class MyCovertChannel(CovertChannelBase):
         random.shuffle(range_list)
         return range_list
         
-    def send(self, log_file_name, idle_time, index_range, random_seed, destination_ip, destination_port):
-        # Create random binary mesage
+    def send(self, log_file_name, idle_time, index_range, random_seed, ip, port):
         binary_message = self.generate_random_binary_message_with_logging(log_file_name)
+        print(f"Binary message to send: {binary_message}")
 
+        # Define index ranges for bursts
         index_ranges = index_range
         
-        # Split binary message into chunks of 8 bits (process string with chunks)
+        # Split binary message into chunks of 8 bits
         chunks = [binary_message[i:i + 8] for i in range(0, len(binary_message), 8)]
+        print(f"Binary message chunks (8 bits each): {chunks}")
+
         # Process each chunk
-
-        # Timer start
-        start_time = time()
-
         for chunk_index, chunk in enumerate(chunks):
+            print(f"Processing chunk {chunk_index + 1}/{len(chunks)}: {chunk}")
+
             # Prepare a list with ("bit value either 0 or 1", index of the bit). Also enumerate them.
             char_to_send = [(bit, idx) for idx, bit in enumerate(chunk)]
 
@@ -52,9 +53,11 @@ class MyCovertChannel(CovertChannelBase):
                 # From the chosen burst range pick a burst count randomly
                 burst_count = random.randint(*burst_count_range)
 
-                # Send bursts
+                print(burst_count)
+
+                # Send bursts
                 for _ in range(burst_count):
-                    packet = IP(dst=destination_ip) / TCP(dport=destination_port, flags="S")
+                    packet = IP(dst=ip) / TCP(dport=port, flags="S")
                     super().send(packet)
 
                 # Increase the random_seed based on randomly choosen index (idx which is chosen on line 35-36 and extracted on line 42)
@@ -62,16 +65,12 @@ class MyCovertChannel(CovertChannelBase):
                 random_seed += idx
 
                 # Sleep for a little time
+                print(f"Sent burst of {burst_count} packets for bit '{bit}' (Index: {idx}) in chunk {chunk_index + 1}")
                 sleep(idle_time)
 
-        # Timer end
-        end_time = time()
-        elapsed_time = end_time - start_time
-        covert_channel_capacity = 128 / elapsed_time
-        print(f"Covert Channel Capacity: {covert_channel_capacity:.2f} bits/second\n")
 
 
-    def receive(self, idle_threshold, log_file_name, index_range, random_seed, timeout, src_host, dst_port):
+    def receive(self, idle_threshold, log_file_name, index_range, random_seed, timeout, ip, port):
         manager = multiprocessing.Manager()
         shared_data = manager.dict()
 
@@ -86,7 +85,6 @@ class MyCovertChannel(CovertChannelBase):
         shared_data['ranges'] = index_range
 
         def packet_handler(packet):
-            
             # This part is for the first packet to initialzie packet time and start of the packet handling
             if not shared_data['sender_started']:
                 shared_data['sender_started'] = True
@@ -102,8 +100,7 @@ class MyCovertChannel(CovertChannelBase):
 
                     # Shuffle the range list as done in the sender
                     shared_data['ranges'] = self.shuffle_list(shared_data['ranges'], shared_data['seed'])
-
-
+                    
                     # Get the corresponding index and bit value
                     for idx, (low, high) in enumerate(shared_data['ranges']):
                         if low <= shared_data['burst_packet_count'] <= high:
@@ -120,31 +117,34 @@ class MyCovertChannel(CovertChannelBase):
                             # Also allocate new space for upcoming char.
                             shared_data['i'] = shared_data['i'] + 1
                             shared_data['received_message'] += 8 * [None]
+                        print(shared_data['i'])
 
                         # Increment bit count
                         shared_data['received_bit_count'] = shared_data['received_bit_count'] + 1
-
                         msg = shared_data['received_message']
 
                         # i*8 because every char is 8 bit. Then add index to insert bit to correct position.
                         msg[shared_data['i']*8+index] = str(bit)
                         shared_data['received_message'] = msg
+                        print(f"Decoded burst: {shared_data['burst_packet_count']} packets -> Bit '{bit}' (Index: {index})")
+                        print(shared_data['received_message'])
 
                     # Reset burst count
                     shared_data['burst_packet_count'] = 0
-
 
                 # Increment burst count and update last package time
                 shared_data['burst_packet_count'] += 1
                 shared_data['last_packet_time'] = current_time
         
+        # Start sniffing with socket access
         def start_sniffing():
+            print("sniff started")
             sniff_socket = sniff(
-                filter=f"tcp and src host {src_host} and dst port {dst_port}",
+                filter=f"tcp and src host {ip} and dst port {port}",
                 prn=packet_handler
             )
+            print("sniff ended")
 
-        # Start sniffing process 
         sniff_thread = multiprocessing.Process(target=start_sniffing, args=())
         sniff_thread.start()
 
@@ -155,38 +155,43 @@ class MyCovertChannel(CovertChannelBase):
                     index = None
                     bit = None
 
-                    # Same process with packet handler
 
+                    # Same process with packet handler
                     shared_data['ranges'] = self.shuffle_list(shared_data['ranges'], shared_data['seed'])
                     
                     for idx, (low, high) in enumerate(shared_data['ranges']):
                         if low <= shared_data['burst_packet_count'] <= high:
                             index, bit = idx // 2, idx % 2
                             break
-                    
 
                     # Insert last bit here
                     if index is not None:
                         if shared_data['received_bit_count'] % 8 == 0:
                             shared_data['i'] = shared_data['i'] + 1
                             shared_data['received_message'] += 8 * [None]
+                        print(shared_data['i'])
                         shared_data['received_bit_count'] = shared_data['received_bit_count'] + 1
                         msg = shared_data['received_message']
                         msg[shared_data['i']*8+index] = str(bit)
                         shared_data['received_message'] = msg
+                        print(f"Decoded burst: {shared_data['burst_packet_count']} packets -> Bit '{bit}' (Index: {index})")
+                        print(shared_data['received_message'])
 
                     shared_data['burst_packet_count'] = 0
+
+                    print(f"No packets received in the last {timeout} seconds. Terminating sniffing.")
                     sniff_thread.terminate()
                     break
 
         sniff_thread.join()
 
+
         # Get the resulting received message and log it.
-        msg_list = shared_data['received_message']
-        msg = "".join(msg_list)
+        msg = "".join(shared_data['received_message'])
         decoded_message = "".join(
             self.convert_eight_bits_to_character(msg[i:i + 8])
             for i in range(0, len(msg), 8)
         )
 
         self.log_message(decoded_message, log_file_name)
+        print(f"Received message: {decoded_message}")
