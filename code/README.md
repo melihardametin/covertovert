@@ -64,35 +64,33 @@ The `config.json` file specifies the parameters for the sender and receiver:
 ### **Send Parameters**:
 ```json
 {
-  "log_file_name": "ChannelSender.log",
-  "idle_time": 0.2,
-  "index_range": [
-    [1, 3], [4, 6], [7, 9], [10, 12],
+    "log_file_name": "ChannelSender.log",
+    "idle_time": 0.2,
+    "index_range":[ [1, 3], [4, 6], [7, 9], [10, 12],
     [13, 15], [16, 18], [19, 21], [22, 24],
     [25, 27], [28, 30], [31, 33], [34, 36],
     [37, 39], [40, 42], [43, 45], [46, 48]
   ],
-  "random_seed": 32,
-  "destination_ip": "172.18.0.3",
-  "destination_port": 8000
+    "random_seed": 32,
+    "ip": "172.18.0.3",
+    "port": 8000
 }
 ```
 
 ### **Receive Parameters**:
 ```json
 {
-  "idle_threshold": 0.19,
-  "log_file_name": "ChannelReceiver.log",
-  "index_range": [
-    [1, 3], [4, 6], [7, 9], [10, 12],
+    "idle_threshold": 0.19,
+    "log_file_name": "ChannelReceiver.log",
+    "index_range": [ [1, 3], [4, 6], [7, 9], [10, 12],
     [13, 15], [16, 18], [19, 21], [22, 24],
     [25, 27], [28, 30], [31, 33], [34, 36],
     [37, 39], [40, 42], [43, 45], [46, 48]
   ],
-  "random_seed": 32,
-  "timeout": 0.6,
-  "src_host": "172.18.0.2",
-  "dst_port": 8000
+    "random_seed": 32,
+    "timeout": 0.6,
+    "ip": "172.18.0.2",
+    "port": "8000"
 }
 ```
 
