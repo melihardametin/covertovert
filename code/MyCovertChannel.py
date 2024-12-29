@@ -7,14 +7,19 @@ import random
 class MyCovertChannel(CovertChannelBase):
     def __init__(self):
         super().__init__()
+
+    def shuffle_list(self, range_list, seed):
+        # This function basically shuffles the list based on the given seed
+        random.seed(seed)
+        random.shuffle(range_list)
+        return range_list
         
-    def send(self, log_file_name, idle_time):
+    def send(self, log_file_name, idle_time, index_range, random_seed):
         binary_message = self.generate_random_binary_message_with_logging(log_file_name)
         print(f"Binary message to send: {binary_message}")
 
         # Define index ranges for bursts
-        index_ranges = [(1, 3), (4, 6), (7, 9), (10, 12), (13, 15), (16, 18), (19, 21), (22, 24),
-                        (25, 27), (28, 30), (31, 33), (34, 36), (37, 39), (40, 42), (43, 45), (46, 48)]
+        index_ranges = index_range
         
         # Split binary message into chunks of 8 bits
         chunks = [binary_message[i:i + 8] for i in range(0, len(binary_message), 8)]
@@ -31,6 +36,8 @@ class MyCovertChannel(CovertChannelBase):
                 random_index = random.randint(0, len(char_to_send) - 1)
                 selected_char = char_to_send.pop(random_index)
 
+                index_ranges = self.shuffle_list(index_ranges, random_seed)
+
                 bit, idx = selected_char
                 i = idx * 2 + 1 if bit == "1" else idx * 2
                 burst_count_range = index_ranges[i]
@@ -42,12 +49,15 @@ class MyCovertChannel(CovertChannelBase):
                     packet = IP(dst="172.18.0.3") / TCP(dport=8000, flags="S")
                     super().send(packet)
 
+                random_seed += idx
+
+
                 print(f"Sent burst of {burst_count} packets for bit '{bit}' (Index: {idx}) in chunk {chunk_index + 1}")
                 sleep(idle_time)
 
 
 
-    def receive(self, idle_threshold, log_file_name):
+    def receive(self, idle_threshold, log_file_name, index_range, random_seed):
         manager = multiprocessing.Manager()
         shared_data = manager.dict()
         shared_data['received_message'] = []
@@ -56,15 +66,8 @@ class MyCovertChannel(CovertChannelBase):
         shared_data['last_packet_time'] = time()
         shared_data['i'] = -1
         shared_data['received_bit_count'] = 0
-        
-        index_ranges = [(1, 3), (4, 6), (7, 9), (10, 12), (13, 15), (16, 18), (19, 21), (22, 24),
-                        (25, 27), (28, 30), (31, 33), (34, 36), (37, 39), (40, 42), (43, 45), (46, 48)]
-
-        def find_index_and_bit(burst_count):
-            for idx, (low, high) in enumerate(index_ranges):
-                if low <= burst_count <= high:
-                    return idx // 2, idx % 2
-            return None, None
+        shared_data['seed'] = random_seed
+        shared_data['ranges'] = index_range
 
         def packet_handler(packet):
 
@@ -77,9 +80,17 @@ class MyCovertChannel(CovertChannelBase):
                 idle_time = current_time - shared_data['last_packet_time']
 
                 if idle_time > idle_threshold:
+                    index = None
+                    bit = None
+
+                    shared_data['ranges'] = self.shuffle_list(shared_data['ranges'], shared_data['seed'])
                     
-                    index, bit = find_index_and_bit(shared_data['burst_packet_count'])
-                    print(index, bit)
+                    for idx, (low, high) in enumerate(shared_data['ranges']):
+                        if low <= shared_data['burst_packet_count'] <= high:
+                            index, bit = idx // 2, idx % 2
+                            break
+                    
+                    shared_data['seed'] = shared_data['seed'] + index
 
                     if index is not None:
                         if shared_data['received_bit_count'] % 8 == 0:
@@ -111,10 +122,17 @@ class MyCovertChannel(CovertChannelBase):
         sniff_thread.start()
 
         while True:
-                sleep(0.6)
+                sleep(0.3)
                 if shared_data['sender_started'] and (time() - shared_data['last_packet_time']) > 0.6:
-                    index, bit = find_index_and_bit(shared_data['burst_packet_count'])
-                    print(index, bit)
+                    index = None
+                    bit = None
+
+                    shared_data['ranges'] = self.shuffle_list(shared_data['ranges'], shared_data['seed'])
+                    
+                    for idx, (low, high) in enumerate(shared_data['ranges']):
+                        if low <= shared_data['burst_packet_count'] <= high:
+                            index, bit = idx // 2, idx % 2
+                            break
 
                     if index is not None:
                         if shared_data['received_bit_count'] % 8 == 0:
